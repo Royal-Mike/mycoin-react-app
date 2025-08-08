@@ -10,7 +10,7 @@ export default function Header() {
 					<div className="brand-logo" aria-hidden="true">
 						<FaCoins className="brand-icon" aria-hidden="true" />
 					</div>
-					<span className="brand-name">MYCOIN</span>
+					<span className="brand-name">MYCOIN561</span>
 				</div>
 
 				{/* Nav */}

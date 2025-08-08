@@ -3,6 +3,7 @@ import "./onboarding.css";
 import { FaArrowLeft, FaEye, FaEyeSlash, FaGithub, FaInstagram, FaRedditAlien } from "react-icons/fa6";
 import { FaXTwitter } from "react-icons/fa6";
 import { generateMnemonic12, mnemonicToSeed, deriveEthereumAccount, saveVaultEncrypted } from "../crypto/wallet-lib";
+import { initDbIfMissing, setWallet, addGenesis } from '../storage/localDb';
 
 const ACCENT = "var(--page-blue)";
 
@@ -81,11 +82,30 @@ export default function Onboarding() {
 	async function finish() {
 		const seed = await mnemonicToSeed(mnemonic.join(" "), "");
 		const acct = deriveEthereumAccount(seed, "m/44'/60'/0'/0/0");
-		await saveVaultEncrypted(
-			{ createdAt: Date.now(), address: acct.address, path: acct.path, pubKey: acct.publicKeyHex, privKey: acct.privateKeyHex },
-			password
-		);
+
+		initDbIfMissing();
+		setWallet({
+			address: acct.address,
+			path: acct.path,
+			publicKey: acct.publicKeyHex,
+			privateKey: acct.privateKeyHex,
+			mnemonic: mnemonic.join(' '), // plaintext (mock)
+		});
+		addGenesis(acct.address, 1_000_000); // give the user coins
+
 		setStep("ready");
+	}
+
+	function resetOnboarding() {
+		setStep("landing");
+		setPassword("");
+		setPassword2("");
+		setShowPwd1(false);
+		setShowPwd2(false);
+		setMnemonic([]);
+		setChecks([]);
+		setSelected({});
+		window.scrollTo({ top: 0, behavior: "smooth" });
 	}
 
   const canGoPwd1Next = strength >= 2 && password.length >= 8;
@@ -214,10 +234,8 @@ export default function Onboarding() {
             </div>
           </div>
 
-          <button className="btn primary" onClick={() => alert("All set!")}>Finish</button>
-          <button className="btn link" onClick={() => alert('Open how-to guide')}>
-            How to get started 👉
-          </button>
+          <button className="btn primary" onClick={resetOnboarding}>Finish</button>
+          <button className="btn link">How to get started 👉</button>
         </section>
       )}
     </main>
