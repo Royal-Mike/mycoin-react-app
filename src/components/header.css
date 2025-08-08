@@ -1,0 +1,110 @@
+.site-header {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* The rounded bar */
+.header-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 16px;
+    border-radius: 9999px;
+    background: var(--pill);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .7) inset;
+    outline: 2px solid rgba(255, 255, 255, .7);
+    /* mimics the white ring from your screenshot */
+}
+
+/* ---------- Brand ---------- */
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 120px;
+}
+
+.brand-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 9999px;
+    background: var(--white);
+    display: grid;
+    place-items: center;
+}
+
+.brand-icon {
+    width: 20px;
+    height: 20px;
+    color: #0ea5a3;
+    /* teal-ish */
+}
+
+.brand-name {
+    font-weight: 900;
+    font-size: 24px;
+    letter-spacing: -0.02em;
+    color: var(--brand);
+}
+
+/* ---------- Nav ---------- */
+.main-nav {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    margin-inline: auto;
+    /* keep centered between brand and CTA */
+}
+
+.main-nav a {
+    text-decoration: none;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.main-nav a:hover {
+    opacity: .8
+}
+
+.main-nav .has-caret::after {
+    content: " ▾";
+    font-weight: 600;
+}
+
+/* ---------- CTA ---------- */
+.cta {
+    text-decoration: none;
+    background: #000;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.cta:hover {
+    opacity: .9
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+    .main-nav {
+        gap: 18px
+    }
+}
+
+@media (max-width: 760px) {
+    .main-nav {
+        display: none
+    }
+
+    /* simple behavior; shout if you want a hamburger menu */
+    .brand-name {
+        font-size: 20px
+    }
+
+    .header-pill {
+        padding: 10px 12px
+    }
+}

@@ -1,7 +1,27 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* ---------- Base / Reset ---------- */
+:root{
+  --page-blue:#184F90;
+  --pill:#B8C8D8;
+  --brand:#0B4C78;
+  --text:#0C0C0C;
+  --white: #fff;
+}
 
-body {
-    margin: 0;
+*{
+	box-sizing:border-box
+}
+html,body,#root{
+	height:100%
+}
+body{
+  margin:0;
+  font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  color:var(--text);
+  background:var(--page-blue);
+}
+
+/* ---------- Layout ---------- */
+.page{
+	min-height:100%;
+	padding:16px 0px;
 }
