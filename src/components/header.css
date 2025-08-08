@@ -66,6 +66,17 @@
     opacity: .8
 }
 
+.main-nav a.nav-active {
+    padding: 8px 16px;
+    border-radius: 9999px;
+    background-color: var(--page-blue);
+    color: white;
+}
+
+.main-nav a.nav-active:hover {
+    opacity: 1
+}
+
 .main-nav .has-caret::after {
     content: " ▾";
     font-weight: 600;
