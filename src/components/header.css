@@ -1,6 +1,6 @@
 .site-header {
+    width: 70%;
     max-width: 1200px;
-    margin: 0 auto;
 }
 
 /* The rounded bar */
@@ -37,15 +37,14 @@
 .brand-icon {
     width: 20px;
     height: 20px;
-    color: #0ea5a3;
-    /* teal-ish */
+    color: var(--page-blue);
 }
 
 .brand-name {
     font-weight: 900;
     font-size: 24px;
     letter-spacing: -0.02em;
-    color: var(--brand);
+    color: var(--page-blue);
 }
 
 /* ---------- Nav ---------- */

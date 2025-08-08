@@ -1,7 +1,8 @@
 .site-footer {
+    width: 100%;
     background: #fff;
     color: #0C0C0C;
-    padding: 48px 0
+    padding: 48px 0;
 }
 
 .footer-grid {

@@ -21,9 +21,9 @@ export default function Footer() {
         </div>
 
         <div className="footer-col">
-          <a href="#">MEW Mobile App</a>
+          <a href="#">MyCoin Mobile App</a>
           <a href="#">Enkrypt</a>
-          <a href="#">MEW Portfolio Manager</a>
+          <a href="#">MyCoin Portfolio Manager</a>
           <a href="#">ethVM</a>
           <a href="#">Blog</a>
           <a href="#">Press Kit</a>
@@ -40,13 +40,13 @@ export default function Footer() {
 
         <div className="footer-col donate">
           <p>
-            Help us keep MEW free and open-source; your donations go a long way
+            Help us keep MyCoin free and open-source; your donations go a long way
             towards making that possible.
           </p>
-          <a href="#" className="donation-link">
+          <a href="#" className="donation-link" style={{ color: 'darkblue' }}>
             <FaEthereum /> <span>Ethereum Donation</span>
           </a>
-          <a href="#" className="donation-link">
+          <a href="#" className="donation-link" style={{ color: 'orange' }}>
             <FaBitcoin /> <span>Bitcoin Donation</span>
           </a>
         </div>
@@ -54,7 +54,7 @@ export default function Footer() {
 
       <div className="footer-bottom">
         <div className="legal">
-          <p>© 2025 MyEtherWallet. All rights reserved.</p>
+          <p>© 2025 MyCoin. All rights reserved.</p>
           <p>Pricing taken from CoinGecko.</p>
 
           <label className="toggle">
@@ -63,11 +63,11 @@ export default function Footer() {
             <span className="toggle-text">Data Tracking On</span>
           </label>
 
-          <p className="version">Version: v6.9.23-hotfix.1</p>
+          <p className="version">Version: v1.0.0</p>
         </div>
 
         <div className="community">
-          <h4>Join MEW Community</h4>
+          <h4>Join MyCoin Community</h4>
           <div className="socials">
             <a href="#" aria-label="Facebook"><FaFacebookF /></a>
             <a href="#" aria-label="Twitter"><FaTwitter /></a>
