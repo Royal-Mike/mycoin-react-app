@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import "./onboarding.css";
 import "./wallet.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { getDb, listWallets, getWallet, verifyWalletPassword, getBalance } from "../storage/localDb";
+import { getDb, listWallets, getWallet, verifyWalletPassword, getBalance, setActiveWallet, getActiveWallet } from "../storage/localDb";
 import { keccak_256 } from "js-sha3";
 
 export default function Wallet() {
@@ -13,6 +13,15 @@ export default function Wallet() {
   const [show, setShow] = useState(false);
   const [err, setErr] = useState("");
   const [w, setW] = useState(null);
+
+	useLayoutEffect(() => {
+		const active = getActiveWallet();
+		if (active) {
+			setSelected(active.address);
+			setW(active);
+			setStep("details");
+		}
+	}, []);
 
   if (wallets.length === 0) {
     return (
@@ -30,6 +39,7 @@ export default function Wallet() {
     if (!ok) { setErr("Incorrect password"); return; }
     const wallet = getWallet(selected);
     setW(wallet);
+		setActiveWallet(selected);
     setErr(""); setStep("details");
   }
 
@@ -126,7 +136,12 @@ export default function Wallet() {
           )}
 
           <div style={{marginTop:12}}>
-            <button className="btn" onClick={()=>{ setPwd(""); setStep("login"); }}>
+						<button className="btn" onClick={()=>{
+							setActiveWallet(null);  // clear remembered wallet
+							setW(null);
+							setPwd("");
+							setStep("login");
+						}}>
               Lock
             </button>
           </div>

@@ -140,10 +140,8 @@ export async function verifyWalletPassword(address, password) {
 
 export function setActiveWallet(address) {
   const db = load();
-  if (db.wallets[address]) {
-    db.activeAddress = address;
-    save(db);
-  }
+  db.activeAddress = address || null; // allow clearing when null/undefined
+  save(db);
 }
 
 export function getActiveWallet() {
