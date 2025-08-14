@@ -25,7 +25,9 @@ export default function Header({ activePage, onNavigate }) {
 				</nav>
 
 				{/* CTA */}
-				<a href="#" className="cta">Access my wallet</a>
+				<a href="#" className="cta" onClick={(e)=>{e.preventDefault(); onNavigate?.('wallet');}}>
+					Access my wallet
+				</a>
 			</div>
 		</header>
   );

@@ -90,6 +90,7 @@ export default function Onboarding() {
 			publicKey: acct.publicKeyHex,
 			privateKey: acct.privateKeyHex,
 			mnemonic: mnemonic.join(' '), // plaintext (mock)
+      password,
 		});
 		addGenesis(acct.address, 1_000_000); // give the user coins
 

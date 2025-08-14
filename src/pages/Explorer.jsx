@@ -35,6 +35,7 @@ export default function Explorer() {
   // HOME DASHBOARD
   return (
     <main className="expl-wrap">
+      <h2 className="h2">Blockchain explorer</h2>
       <section className="stats">
         <Stat label="Blocks" value={totals.blocks} />
         <Stat label="Transactions" value={totals.txCount} />
@@ -190,6 +191,12 @@ function timeago(ts) {
   const h=Math.floor(m/60); if(h<24) return `${h}h ago`;
   const d=Math.floor(h/24); return `${d}d ago`;
 }
-function shortHash(h){ return h.length>12 ? `${h.slice(0,8)}…${h.slice(-4)}` : h; }
-function shortAddr(a){ return a ? shortHash(a) : '—'; }
-function formatAmount(n){ return Number(n).toLocaleString(undefined,{maximumFractionDigits:8}); }
+function shortHash(h) {
+  return h.length>12 ? `${h.slice(0,8)}…${h.slice(-4)}` : h;
+}
+function shortAddr(a) {
+  return a ? shortHash(a) : '—';
+}
+function formatAmount(n) {
+  return Number(n).toLocaleString(undefined,{maximumFractionDigits:8});
+}

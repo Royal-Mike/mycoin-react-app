@@ -1,0 +1,81 @@
+/* wallet-specific tweaks; uses .card/.kv from onboarding.css */
+.error {
+    color: #dc2626;
+    margin: 4px 0 0 0
+}
+
+.wallet-wrap {
+    width: 60%;
+}
+
+.wallet-card {
+    width: 100%;
+}
+
+.wallet-card .kv {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 10px;
+    padding: 10px 0;
+    border-top: 1px dashed #eee
+}
+
+.wallet-card .kv:first-of-type {
+    border-top: 0
+}
+
+.subhead {
+    margin: 14px 0 6px 0;
+    font-weight: 700
+}
+
+.tx-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid #eee
+}
+
+.tx-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f3f3f3
+}
+
+.tx-row .dir {
+    min-width: 56px;
+    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 800;
+    border-radius: 8px;
+    padding: 4px 8px;
+    text-align: center
+}
+
+.tx-row .dir.in {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0
+}
+
+.tx-row .dir.out {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca
+}
+
+.tx-main {
+    flex: 1
+}
+
+.tx-row .amt {
+    white-space: nowrap
+}
+
+@media (max-width:700px) {
+    .wallet-card .kv {
+        grid-template-columns: 1fr
+    }
+}
