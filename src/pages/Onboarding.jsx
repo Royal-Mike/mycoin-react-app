@@ -3,7 +3,7 @@ import "./onboarding.css";
 import { FaArrowLeft, FaEye, FaEyeSlash, FaGithub, FaInstagram, FaRedditAlien } from "react-icons/fa6";
 import { FaXTwitter } from "react-icons/fa6";
 import { generateMnemonic12, mnemonicToSeed, deriveEthereumAccount, saveVaultEncrypted } from "../crypto/wallet-lib";
-import { initDbIfMissing, setWallet, addGenesis } from '../storage/localDb';
+import { initDbIfMissing, addWalletHashed, addGenesis } from '../storage/localDb';
 
 const ACCENT = "var(--page-blue)";
 
@@ -84,14 +84,13 @@ export default function Onboarding() {
 		const acct = deriveEthereumAccount(seed, "m/44'/60'/0'/0/0");
 
 		initDbIfMissing();
-		setWallet({
-			address: acct.address,
-			path: acct.path,
-			publicKey: acct.publicKeyHex,
-			privateKey: acct.privateKeyHex,
-			mnemonic: mnemonic.join(' '), // plaintext (mock)
-      password,
-		});
+    await addWalletHashed({
+      address: acct.address,
+      path: acct.path,
+      publicKey: acct.publicKeyHex,
+      privateKey: acct.privateKeyHex,
+      mnemonic: mnemonic.join(' '), // plaintext (mock)
+    }, password);
 		addGenesis(acct.address, 1_000_000); // give the user coins
 
 		setStep("ready");
