@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import './explorer.css';
+import { FaArrowLeft } from "react-icons/fa6";
 import { getDb } from '../storage/localDb';
 import { keccak_256 } from 'js-sha3';
 
@@ -98,7 +99,9 @@ function BlockDetail({ hash, onBack }) {
 
   return (
     <main className="expl-wrap">
-      <button className="back" onClick={onBack}>← Back</button>
+      <button className="back-btn" onClick={onBack} aria-label="Back">
+        <FaArrowLeft />
+      </button>
       <div className="panel block">
         <div className="panel-hd">Block #{b.index}</div>
         <div className="kv"><span>Hash</span><code>{b.hash}</code></div>
@@ -192,7 +195,7 @@ function timeago(ts) {
   const d=Math.floor(h/24); return `${d}d ago`;
 }
 function shortHash(h) {
-  return h.length>12 ? `${h.slice(0,8)}…${h.slice(-4)}` : h;
+  return h.length>19 ? `${h.slice(0,10)}...${h.slice(-9)}` : h;
 }
 function shortAddr(a) {
   return a ? shortHash(a) : '—';

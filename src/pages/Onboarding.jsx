@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./onboarding.css";
-import { FaArrowLeft, FaEye, FaEyeSlash, FaGithub, FaInstagram, FaRedditAlien } from "react-icons/fa6";
-import { FaXTwitter } from "react-icons/fa6";
+import { FaArrowLeft, FaEye, FaEyeSlash, FaGithub, FaInstagram, FaRedditAlien, FaXTwitter } from "react-icons/fa6";
 import { generateMnemonic12, mnemonicToSeed, deriveEthereumAccount, saveVaultEncrypted } from "../crypto/wallet-lib";
 import { initDbIfMissing, addWalletHashed, addGenesis } from '../storage/localDb';
 

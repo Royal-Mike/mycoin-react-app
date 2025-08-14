@@ -137,7 +137,7 @@ export default function Wallet() {
 }
 
 function shortHash(h) {
-    return h?.length>24 ? `${h.slice(0,20)}…${h.slice(-4)}` : h;
+    return h?.length>19 ? `${h.slice(0,10)}...${h.slice(-9)}` : h;
 }
 function format(n) {
     return Number(n).toLocaleString(undefined,{maximumFractionDigits:8});

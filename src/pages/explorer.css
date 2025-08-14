@@ -39,14 +39,11 @@
 }
 
 .panel {
+    margin-top: 16px;
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 10px;
     overflow: hidden
-}
-
-.expl-wrap > .panel:not(:first-of-type) {
-    margin-top: 16px
 }
 
 .panel-hd {
@@ -129,13 +126,17 @@
     word-break: break-all
 }
 
-.back {
-    background: transparent;
+.back-btn {
     border: 0;
-    color: var(--page-blue);;
-    font-weight: 700;
-    margin-bottom: 12px;
-    cursor: pointer
+    background: transparent;
+    cursor: pointer;
+    font-size: 20px;
+    color: #111;
+    margin: -6px 0 0 -6px;
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center
 }
 
 @media (max-width:900px) {
