@@ -1,0 +1,83 @@
+/* small tweaks for the send page */
+.send-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px
+}
+
+.muted {
+    margin: 0;
+}
+
+.kv.no-pad {
+    padding: 0 0 6px 0;
+}
+
+.lbl {
+    margin-bottom: 5px;
+    font-weight: 700
+}
+
+.input {
+    padding: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 16px;
+    outline: none
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px
+}
+
+.tab {
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-weight: 700;
+    cursor: pointer
+}
+
+.tab.active {
+    background: #eef2ff;
+    border-color: #c7d2fe
+}
+
+.chk {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6b7280
+}
+
+.banner {
+    padding: 10px;
+    border-radius: 10px;
+    font-weight: 600
+}
+
+.banner.ok {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46
+}
+
+.banner.err {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b
+}
+
+.actions {
+    display: flex;
+    gap: 10px
+}

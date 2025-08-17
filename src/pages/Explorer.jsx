@@ -154,7 +154,9 @@ function TxDetail({ hash, onBack }) {
 
   return (
     <main className="expl-wrap">
-      <button className="back" onClick={onBack}>← Back</button>
+      <button className="back-btn" onClick={onBack} aria-label="Back">
+        <FaArrowLeft />
+      </button>
       <div className="panel">
         <div className="panel-hd">Transaction</div>
         <div className="kv"><span>Hash</span><code>{hash}</code></div>
@@ -181,7 +183,9 @@ function Stat({ label, value }) {
 function Empty({ onBack, label }) {
   return (
     <main className="expl-wrap">
-      <button className="back" onClick={onBack}>← Back</button>
+      <button className="back-btn" onClick={onBack} aria-label="Back">
+        <FaArrowLeft />
+      </button>
       <div className="panel"><div className="panel-hd">{label}</div></div>
     </main>
   );

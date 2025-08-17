@@ -22,6 +22,13 @@ export default function Header({ activePage, onNavigate }) {
           >
             Explorer
           </a>
+					<a
+						href="#"
+						className={activePage === 'send' ? 'nav-active' : ''}
+						onClick={(e) => { e.preventDefault(); onNavigate?.('send'); }}
+					>
+						Send coins
+					</a>
 				</nav>
 
 				{/* CTA */}

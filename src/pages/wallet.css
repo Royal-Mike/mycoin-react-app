@@ -1,7 +1,11 @@
 /* wallet-specific tweaks; uses .card/.kv from onboarding.css */
 .error {
-    color: #dc2626;
-    margin: 4px 0 0 0
+    margin: 4px 0 0 0;
+    padding: 10px;
+    border-radius: 10px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b
 }
 
 .wallet-wrap {

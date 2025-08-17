@@ -113,7 +113,6 @@ export default function Wallet() {
           <div className="kv"><span>Address</span><code>{w.address}</code></div>
           <div className="kv"><span>Public Key</span><code className="mono">{w.publicKey}</code></div>
           <div className="kv"><span>Private Key</span><code className="mono">{w.privateKey}</code></div>
-          <div className="kv"><span>Derivation Path</span><code>{w.path}</code></div>
           <div className="kv"><span>Balance</span><b>{format(balance)} COIN</b></div>
 
           <h3 className="subhead">Recent transactions</h3>
