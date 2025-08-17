@@ -57,7 +57,6 @@ export default function Send({ onNavigate }) {
   function resetForm() {
     setAmount("");
     if (!wallets.length) setToType("custom");
-    setStatus(null);
   }
 
   async function submit(e) {

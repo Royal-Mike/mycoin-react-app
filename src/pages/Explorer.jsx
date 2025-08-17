@@ -46,7 +46,15 @@ export default function Explorer() {
 		return { blocks, txs: allTxs, totals };
 	}, [db]);
 
-  if (view.type === 'block') return <BlockDetail hash={view.hash} onBack={() => setView({ type:'home' })} />;
+	if (view.type === 'block') {
+	  return (
+	    <BlockDetail
+	      hash={view.hash}
+	      onBack={() => setView({ type:'home' })}
+	      onTxClick={(txHash) => setView({ type: 'tx', hash: txHash })}
+	    />
+	  );
+	}
   if (view.type === 'tx') return <TxDetail hash={view.hash} onBack={() => setView({ type:'home' })} />;
 
   // HOME DASHBOARD
@@ -108,7 +116,7 @@ export default function Explorer() {
 }
 
 /* ---------- Block Detail ---------- */
-function BlockDetail({ hash, onBack }) {
+function BlockDetail({ hash, onBack, onTxClick }) {
   const db = getDb();
   const b = db.chain.blocks.find(x => x.hash === hash) || db.chain.blocks.find(x => String(x.index) === String(hash));
   if (!b) return <Empty onBack={onBack} label="Block not found" />;
@@ -137,12 +145,16 @@ function BlockDetail({ hash, onBack }) {
       <div className="panel">
         <div className="panel-hd">Transactions</div>
         <ul className="list">
-          {txs.length ? txs.map((t, i) => {
-            const hash = '0x' + keccak_256(JSON.stringify({ t, i, bh: b.hash }));
-            return (
-              <li key={hash} className="row">
+					{txs.length ? txs.map((t) => {
+						const txHash = t.hash || computeTxHash(t);
+						return (
+							<li
+								key={txHash}
+								className="row"
+								onClick={() => onTxClick?.(txHash)}
+							>
                 <div className="row-l">
-                  <div className="mono">{shortHash(hash)}</div>
+                  <div className="mono">{shortHash(txHash)}</div>
                 </div>
                 <div className="row-r">
                   <div className="pill mono">{formatAmount(t.amount)} COIN</div>
