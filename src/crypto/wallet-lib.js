@@ -115,3 +115,47 @@ export async function saveVaultEncrypted(vaultObj, password) {
   }
   localStorage.setItem('vault_v1', JSON.stringify(payload))
 }
+
+// --- Tx hashing/signing/verification ---
+export function computeTxHash(tx) {
+  // canonical message: exclude signature/pubKey/hash; coerce amount to number
+  const msg = JSON.stringify({
+    from: tx.from,
+    to: tx.to,
+    amount: Number(tx.amount),
+    nonce: tx.nonce,
+  });
+  return '0x' + keccak_256(msg);
+}
+
+export function signTx(privKeyHex, tx) {
+  const msgHashHex = computeTxHash(tx).replace(/^0x/, '');
+  const sig = ec.sign(msgHashHex, privKeyHex, 'hex', { canonical: true });
+  const signature = Buffer.from(sig.toDER()).toString('hex');
+  const pub = privateToPublicUncompressed(Buffer.from(privKeyHex, 'hex')); // existing helper above
+  const pubKeyHex = Buffer.from(pub).toString('hex');
+  return { signature, pubKeyHex, hash: '0x' + msgHashHex };
+}
+
+export function addressFromPublicKey(pubKeyHex) {
+  const pub = Buffer.from(pubKeyHex, 'hex');
+  const noPrefix = pub.slice(1);
+  const hash = Buffer.from(keccak_256.arrayBuffer(noPrefix));
+  const addr = '0x' + hash.slice(-20).toString('hex');
+  return toChecksumAddress(addr); // existing helper above
+}
+
+export function verifySignedTx(tx) {
+  if (!tx || !tx.signature || !tx.pubKey) return false;
+  // verify sender address matches pubKey
+  const addr = addressFromPublicKey(tx.pubKey);
+  if ((tx.from || '').toLowerCase() !== addr.toLowerCase()) return false;
+  // verify signature
+  const msgHashHex = computeTxHash(tx).replace(/^0x/, '');
+  const key = ec.keyFromPublic(tx.pubKey, 'hex');
+  try {
+    return key.verify(msgHashHex, tx.signature);
+  } catch {
+    return false;
+  }
+}

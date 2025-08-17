@@ -3,32 +3,48 @@ import './explorer.css';
 import { FaArrowLeft } from "react-icons/fa6";
 import { getDb } from '../storage/localDb';
 import { keccak_256 } from 'js-sha3';
+import { computeTxHash } from '../crypto/wallet-lib';
 
 export default function Explorer() {
   const [view, setView] = useState({ type: 'home' }); // {type:'home'}|{type:'block',hash}|{type:'tx',hash}
   const db = getDb();
 
-  const { blocks, txs, totals } = useMemo(() => {
-    const blocks = [...db.chain.blocks].reverse(); // latest first
-    // flatten txs (exclude coinbase for the list), add block info + tx hash
-    const flat = [];
-    for (const b of blocks) {
-      b.txs.forEach((tx, i) => {
-        const isCoinbase = tx.type === 'coinbase';
-        const txHash = '0x' + keccak_256(JSON.stringify({ tx, i, bh: b.hash }));
-        flat.push({ ...tx, isCoinbase, block: { index: b.index, hash: b.hash, ts: b.timestamp }, hash: txHash });
-      });
-    }
-    const txs = flat.filter(t => !t.isCoinbase);
-    const totals = {
-      height: db.chain.height,
-      blocks: db.chain.blocks.length,
-      mempool: db.chain.mempool.length,
-      txCount: txs.length,
-      latestBlock: db.chain.blocks.at(-1) || null,
-    };
-    return { blocks, txs, totals };
-  }, [db]);
+	const { blocks, txs, totals } = useMemo(() => {
+		const blocks = [...db.chain.blocks].reverse(); // latest first
+
+		// Flatten confirmed txs (exclude coinbase)
+		const confirmed = [];
+		for (const b of blocks) {
+			b.txs.forEach((tx) => {
+				if (tx.type === 'coinbase') return;
+				confirmed.push({
+					...tx,
+					isPending: false,
+					block: { index: b.index, hash: b.hash, ts: b.timestamp },
+					hash: tx.hash || computeTxHash(tx),
+				});
+			});
+		}
+
+		// Mempool txs (pending)
+		const mempool = db.chain.mempool.map(tx => ({
+			...tx,
+			isPending: true,
+			block: null,
+			hash: tx.hash || computeTxHash(tx),
+		})).sort((a,b)=> (b.timestamp||0) - (a.timestamp||0));
+
+		const allTxs = [...mempool, ...confirmed]; // pending first
+
+		const totals = {
+			height: db.chain.height,
+			blocks: db.chain.blocks.length,
+			mempool: db.chain.mempool.length,
+			txCount: allTxs.filter(t => !t.isPending).length,
+			latestBlock: db.chain.blocks.at(-1) || null,
+		};
+		return { blocks, txs: allTxs, totals };
+	}, [db]);
 
   if (view.type === 'block') return <BlockDetail hash={view.hash} onBack={() => setView({ type:'home' })} />;
   if (view.type === 'tx') return <TxDetail hash={view.hash} onBack={() => setView({ type:'home' })} />;
@@ -66,21 +82,25 @@ export default function Explorer() {
         <div className="panel">
           <div className="panel-hd">Latest Transactions</div>
           <ul className="list">
-            {txs.slice(0, 10).map(t => (
-              <li key={t.hash} className="row" onClick={()=>setView({type:'tx', hash:t.hash})}>
-                <div className="row-l">
-                  <div className="mono link">{shortHash(t.hash)}</div>
-                  <div className="sub">{timeago(t.block.ts)}</div>
-                </div>
-                <div className="row-r">
-                  <div className="pill mono">{formatAmount(t.amount)} COIN</div>
-                  <div className="sub">
-                    From <span className="mono">{shortAddr(t.from)}</span> to <span className="mono">{shortAddr(t.to)}</span>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+						{txs.slice(0, 10).map(t => (
+							<li key={t.hash} className="row" onClick={()=>setView({type:'tx', hash:t.hash})}>
+								<div className="row-l">
+									<div className="mono link">{shortHash(t.hash)}</div>
+									<div className="sub">
+										{t.isPending ? 'In mempool' : timeago(t.block.ts)}
+									</div>
+								</div>
+								<div className="row-r">
+									<div className={`pill mono ${t.isPending ? 'pill-pending' : ''}`}>
+										{formatAmount(t.amount)} COIN
+									</div>
+									<div className="sub">
+										From <span className="mono">{shortAddr(t.from)}</span> to <span className="mono">{shortAddr(t.to)}</span>
+									</div>
+								</div>
+							</li>
+						))}
+					</ul>
         </div>
       </section>
     </main>
@@ -141,12 +161,33 @@ function BlockDetail({ hash, onBack }) {
 function TxDetail({ hash, onBack }) {
   const db = getDb();
 
+  // 1) mempool
+  const mp = db.chain.mempool.find(t => (t.hash || computeTxHash(t)) === hash);
+  if (mp) {
+    return (
+      <main className="expl-wrap">
+        <button className="back-btn" onClick={onBack} aria-label="Back">
+					<FaArrowLeft />
+				</button>
+        <div className="panel">
+          <div className="panel-hd">Transaction (Pending)</div>
+          <div className="kv"><span>Hash</span><code>{mp.hash || computeTxHash(mp)}</code></div>
+          <div className="kv"><span>Status</span><b className="pending">Pending</b></div>
+          <div className="kv"><span>From</span><code>{mp.from}</code></div>
+          <div className="kv"><span>To</span><code>{mp.to}</code></div>
+          <div className="kv"><span>Value</span><span>{formatAmount(mp.amount)} COIN</span></div>
+          <div className="kv"><span>Nonce</span><span>{mp.nonce}</span></div>
+        </div>
+      </main>
+    );
+  }
+
+  // 2) confirmed blocks
   let found = null, block = null;
   outer: for (const b of db.chain.blocks) {
-    for (let i = 0; i < b.txs.length; i++) {
-      const t = b.txs[i];
+    for (const t of b.txs) {
       if (t.type === 'coinbase') continue;
-      const h = '0x' + keccak_256(JSON.stringify({ t, i, bh: b.hash }));
+      const h = t.hash || computeTxHash(t);
       if (h === hash) { found = t; block = b; break outer; }
     }
   }
@@ -166,6 +207,7 @@ function TxDetail({ hash, onBack }) {
         <div className="kv"><span>From</span><code>{found.from}</code></div>
         <div className="kv"><span>To</span><code>{found.to}</code></div>
         <div className="kv"><span>Value</span><span>{formatAmount(found.amount)} COIN</span></div>
+        <div className="kv"><span>Nonce</span><span>{found.nonce}</span></div>
       </div>
     </main>
   );

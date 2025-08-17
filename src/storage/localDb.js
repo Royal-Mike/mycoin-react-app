@@ -1,4 +1,5 @@
 import { keccak_256 } from "js-sha3";
+import { verifySignedTx, computeTxHash } from '../crypto/wallet-lib';
 
 const DB_KEY = "mycoin_db_21127561";
 
@@ -171,8 +172,14 @@ export function debit(address, amount) {
 // ---------- Tx / Chain ----------
 export function addToMempool(tx) {
   const db = load();
-  if (!tx.from || !tx.to || !(tx.amount > 0)) throw new Error("Bad tx");
+  if (!tx.from || !tx.to || !(tx.amount > 0)) throw new Error('Bad tx');
   tx.nonce ??= Date.now();
+  tx.timestamp ??= Date.now();
+  tx.hash ??= computeTxHash(tx);
+
+  // must be signed & valid
+  if (!verifySignedTx(tx)) throw new Error('Invalid signature');
+
   db.chain.mempool.push(tx);
   save(db);
 }
@@ -182,16 +189,22 @@ export function mineBlock(minerAddress) {
   const tip = db.chain.blocks.at(-1);
   const prevHash = tip ? tip.hash : "0".repeat(64);
 
+  // copy current mempool
   const txs = db.chain.mempool.slice();
+
+  // Validate signatures & balances on a temp state
   const balances = new Map(Object.entries(db.accounts).map(([a, v]) => [a, v.balance]));
   const safeGet = (a) => balances.get(a) ?? 0;
   for (const tx of txs) {
+    if (!verifySignedTx(tx)) throw new Error("Invalid tx signature");
     if (safeGet(tx.from) < tx.amount) throw new Error(`Insufficient funds for ${tx.from}`);
     balances.set(tx.from, safeGet(tx.from) - tx.amount);
     balances.set(tx.to, safeGet(tx.to) + tx.amount);
   }
 
+  // Coinbase
   const rewardTx = { type: "coinbase", to: minerAddress, amount: db.chain.reward, nonce: db.chain.height };
+
   const base = { index: db.chain.height, prevHash, timestamp: Date.now(), txs: [rewardTx, ...txs] };
 
   let nonce = 0, hash = "";
@@ -203,14 +216,14 @@ export function mineBlock(minerAddress) {
 
   const block = { ...base, nonce, hash };
 
-  // commit balances
+  // commit balances and chain
   for (const [addr, bal] of balances) db.accounts[addr] = { balance: bal };
   db.accounts[minerAddress] ??= { balance: 0 };
   db.accounts[minerAddress].balance += db.chain.reward;
 
   db.chain.blocks.push(block);
   db.chain.height += 1;
-  db.chain.mempool = [];
+  db.chain.mempool = []; // consumed
   save(db);
   return block;
 }

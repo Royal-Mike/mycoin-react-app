@@ -5,6 +5,7 @@ import {
   getActiveWallet, listWallets, getBalance,
   addToMempool, mineBlock, getDb
 } from "../storage/localDb";
+import { signTx } from '../crypto/wallet-lib';
 
 export default function Send({ onNavigate }) {
   const active = getActiveWallet();
@@ -68,8 +69,12 @@ export default function Send({ onNavigate }) {
       const to = resolveTo();
       const amt = Number(amount);
 
-      // 1) Add tx to mempool
-      addToMempool({ from: fromAddr, to, amount: amt });
+			// 1) Build & sign tx, then mempool
+			const nonce = Date.now();
+			const baseTx = { from: fromAddr, to, amount: amt, nonce };
+			const sig = signTx(active.privateKey, baseTx);
+			const signedTx = { ...baseTx, pubKey: sig.pubKeyHex, signature: sig.signature, hash: sig.hash, timestamp: Date.now() };
+			addToMempool(signedTx);
 
       // 2) Optionally mine immediately (miner = active wallet)
       if (mineNow) {

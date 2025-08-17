@@ -106,6 +106,17 @@
     padding: 4px 8px
 }
 
+.pill-pending {
+    background: #fff7ed;
+    border-color: #fed7aa;
+}
+
+.pending {
+    color: #ea580c;
+}
+
+/* status text color */
+
 .link {
     color: var(--page-blue);
 }
