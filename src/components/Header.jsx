@@ -29,6 +29,13 @@ export default function Header({ activePage, onNavigate }) {
 					>
 						Send coins
 					</a>
+					<a
+						href="#"
+						className={activePage === 'mine' ? 'nav-active' : ''}
+						onClick={(e) => { e.preventDefault(); onNavigate?.('mine'); }}
+					>
+						Mine blocks
+					</a>
 				</nav>
 
 				{/* CTA */}

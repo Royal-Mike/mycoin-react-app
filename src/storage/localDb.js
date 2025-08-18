@@ -214,7 +214,7 @@ export function mineBlock(minerAddress) {
     hash = keccak_256(JSON.stringify({ ...base, nonce }));
   } while (!hash.startsWith(target) && nonce < 1e7);
 
-  const block = { ...base, nonce, hash };
+	const block = { ...base, nonce, hash, consensus: "pow" };
 
   // commit balances and chain
   for (const [addr, bal] of balances) db.accounts[addr] = { balance: bal };
@@ -245,6 +245,72 @@ export function addGenesis(recipient, amount = 1_000_000) {
   db.chain.height = 1;
   save(db);
   return block;
+}
+
+// ---------- Proof of Stake ----------
+export function listAccounts() {
+  const db = load();
+  return Object.entries(db.accounts).map(([address, { balance }]) => ({ address, balance }));
+}
+
+export function mineBlockPos(validatorAddress) {
+  const db = load();
+  const tip = db.chain.blocks.at(-1);
+  const prevHash = tip ? tip.hash : "0".repeat(64);
+
+  // choose validator if not provided
+  const validator = validatorAddress || pickValidatorByStake();
+
+  // copy mempool and validate (signature + balances)
+  const txs = db.chain.mempool.slice();
+  const balances = new Map(Object.entries(db.accounts).map(([a, v]) => [a, v.balance]));
+  const safeGet = (a) => balances.get(a) ?? 0;
+  for (const tx of txs) {
+    if (!verifySignedTx(tx)) throw new Error("Invalid tx signature");
+    if (safeGet(tx.from) < tx.amount) throw new Error(`Insufficient funds for ${tx.from}`);
+    balances.set(tx.from, safeGet(tx.from) - tx.amount);
+    balances.set(tx.to, safeGet(tx.to) + tx.amount);
+  }
+
+  // Reward validator (same reward as PoW for simplicity)
+  const rewardTx = { type: "coinbase", to: validator, amount: db.chain.reward, nonce: db.chain.height };
+
+  const base = {
+    index: db.chain.height,
+    prevHash,
+    timestamp: Date.now(),
+    txs: [rewardTx, ...txs],
+    consensus: "pos",
+    nonce: 0,
+  };
+  const hash = keccak_256(JSON.stringify(base));
+  const block = { ...base, hash };
+
+  // commit balances and chain
+  for (const [addr, bal] of balances) db.accounts[addr] = { balance: bal };
+  db.accounts[validator] ??= { balance: 0 };
+  db.accounts[validator].balance += db.chain.reward;
+
+  db.chain.blocks.push(block);
+  db.chain.height += 1;
+  db.chain.mempool = [];
+  save(db);
+  return block;
+}
+
+function pickValidatorByStake() {
+  const db = load();
+  const entries = Object.entries(db.accounts); // [address, {balance}]
+  const stakes = entries.filter(([, v]) => (v?.balance || 0) > 0);
+  if (stakes.length === 0) return db.activeAddress || (entries[0]?.[0] ?? null);
+
+  const total = stakes.reduce((s, [, v]) => s + (v.balance || 0), 0);
+  let r = Math.random() * total;
+  for (const [addr, v] of stakes) {
+    r -= v.balance || 0;
+    if (r <= 0) return addr;
+  }
+  return stakes[stakes.length - 1][0];
 }
 
 // ---------- helpers ----------
