@@ -159,3 +159,55 @@ export function verifySignedTx(tx) {
     return false;
   }
 }
+
+// --- Encrypt / Decrypt arbitrary text with a password (PBKDF2 + AES-GCM)
+export async function encryptText(plainText, password) {
+  const enc = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv   = crypto.getRandomValues(new Uint8Array(12));
+
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveKey']
+  );
+  const key = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', hash: 'SHA-256', iterations: 200_000, salt },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 }, false, ['encrypt']
+  );
+
+  const ct = new Uint8Array(
+    await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plainText))
+  );
+
+  const toHex = (u8) => [...u8].map(b=>b.toString(16).padStart(2,'0')).join('');
+  return {
+    v: 1,
+    kdf: 'pbkdf2-sha256',
+    iter: 200_000,
+    algo: 'aes-gcm-256',
+    salt: toHex(salt),
+    iv: toHex(iv),
+    ct: toHex(ct),
+  };
+}
+
+export async function decryptText(payload, password) {
+  const dec = new TextDecoder();
+  const fromHex = (h) => new Uint8Array(h.match(/../g).map(x=>parseInt(x,16)));
+
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(password), { name: 'PBKDF2' }, false, ['deriveKey']
+  );
+  const key = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', hash: 'SHA-256', iterations: payload.iter, salt: fromHex(payload.salt) },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+  );
+
+  const pt = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: fromHex(payload.iv) },
+    key,
+    fromHex(payload.ct)
+  );
+  return dec.decode(pt);
+}

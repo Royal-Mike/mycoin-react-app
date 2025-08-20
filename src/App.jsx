@@ -6,6 +6,7 @@ import Explorer from './pages/Explorer.jsx';
 import Wallet from './pages/Wallet.jsx';
 import Send from './pages/Send.jsx';
 import Mine from './pages/Mine.jsx';
+import Restore from './pages/Restore.jsx';
 import './app.css';
 
 export default function App() {
@@ -21,7 +22,9 @@ export default function App() {
 							? <Send onNavigate={setPage} />
 							: page === 'mine'
 								? <Mine onNavigate={setPage} />
-								: <Onboarding />}
+								: page === 'restore'
+									? <Restore onNavigate={setPage} />
+									: <Onboarding onNavigate={setPage} />}
       <Footer />
     </div>
   );

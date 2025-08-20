@@ -35,7 +35,7 @@ function BackBtn({ onClick }) {
   );
 }
 
-export default function Onboarding() {
+export default function Onboarding({ onNavigate }) {
   const [step, setStep] = useState("landing"); // landing | pwd1 | pwd2 | phrase | verify | ready
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
@@ -121,7 +121,7 @@ export default function Onboarding() {
           <p className="muted">Switch accounts and chains with 1 click.<br/>MyCoin currently supports the Ethereum and Polkadot ecosystems with more chains on the way!</p>
 
           <button className="btn primary" onClick={() => setStep("pwd1")}>Create a new wallet</button>
-          <button className="btn link" onClick={() => alert("Restore flow not implemented in this demo")}>Restore existing wallet</button>
+          <button className="btn link" onClick={() => onNavigate?.('restore')}>Restore existing wallet</button>
         </section>
       )}
 

@@ -1,5 +1,5 @@
 import { keccak_256 } from "js-sha3";
-import { verifySignedTx, computeTxHash } from '../crypto/wallet-lib';
+import { verifySignedTx, computeTxHash, encryptText } from '../crypto/wallet-lib';
 
 const DB_KEY = "mycoin_db_21127561";
 const POW_DEFAULTS = {
@@ -16,7 +16,7 @@ const POW_DEFAULTS = {
 
 function ensurePowConfig(db) {
   let changed = false;
-  if (!db.chain) { db.chain = { height:0, blocks:[], mempool:[], reward:50 }; changed = true; }
+  if (!db.chain) { db.chain = { height:0, blocks:[], mempool:[], reward:5 }; changed = true; }
   if (!db.chain.pow) { db.chain.pow = { ...POW_DEFAULTS }; changed = true; }
   // Keep old code working if anything still reads `chain.difficulty`
   if (typeof db.chain.difficulty !== 'number') { db.chain.difficulty = 2; changed = true; }
@@ -164,7 +164,15 @@ export function initDbIfMissing() {
 export async function addWalletHashed(wallet, password) {
   const db = load();
   const passRec = await createPasswordRecord(password);
-  db.wallets[wallet.address] = { ...wallet, password: passRec };
+
+  // Encrypt mnemonic if provided; do NOT store it in plaintext.
+  let secret = null;
+  if (wallet.mnemonic) {
+    secret = { encMnemonic: await encryptText(wallet.mnemonic, password) };
+    delete wallet.mnemonic;
+  }
+
+  db.wallets[wallet.address] = { ...wallet, password: passRec, secret };
   db.accounts[wallet.address] ??= { balance: 0 };
   db.activeAddress ??= wallet.address;
   save(db);
