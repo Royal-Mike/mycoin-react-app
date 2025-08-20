@@ -3,7 +3,7 @@ import "./mine.css";
 import { useMemo, useState } from "react";
 import {
   getActiveWallet, listWallets, listAccounts,
-  mineBlock, mineBlockPos
+  mineBlockPowAsync, mineBlockPos
 } from "../storage/localDb";
 
 export default function Mine({ onNavigate }) {
@@ -27,19 +27,29 @@ export default function Mine({ onNavigate }) {
   const [mode, setMode] = useState("pow"); // 'pow' | 'pos'
   const [miner, setMiner] = useState(active.address);
   const [validator, setValidator] = useState(active.address);
-  const [status, setStatus] = useState(null); // { ok:boolean, msg:string }
+	const [status, setStatus] = useState(null);     // { ok:boolean, msg:string }
+	const [mining, setMining] = useState(false);    // loading flag for UI
+	const [prog, setProg] = useState(null);         // { nonceTried, elapsedMs, targetHex }
 
   async function doMine() {
     try {
-      if (mode === "pow") {
-        const block = mineBlock(miner);
-        setStatus({ ok: true, msg: `Block mined (PoW) • #${block.index} • ${block.txs.length - 1} tx • reward → ${short(miner)}` });
-      } else {
+			if (mode === "pow") {
+				setMining(true);
+				setStatus(null);
+				setProg({ nonceTried: 0, elapsedMs: 0 });
+				const block = await mineBlockPowAsync(miner, {
+					onProgress: (p) => setProg(p),
+				});
+				setStatus({ ok: true, msg: `Block mined (PoW) • #${block.index} • ${block.txs.length - 1} tx • reward → ${short(miner)}` });
+				setMining(false);
+				setProg(null);
+			} else {
         const block = mineBlockPos(validator);
         setStatus({ ok: true, msg: `Block forged (PoS) • #${block.index} • ${block.txs.length - 1} tx • reward → ${short(validator)}` });
       }
     } catch (e) {
       setStatus({ ok: false, msg: e.message || String(e) });
+			setMining(false);
     }
   }
 
@@ -56,11 +66,13 @@ export default function Mine({ onNavigate }) {
               type="button"
               className={`tab ${mode === "pow" ? "active" : ""}`}
               onClick={() => setMode("pow")}
+							disabled={mining}
             >Proof of Work</button>
             <button
               type="button"
               className={`tab ${mode === "pos" ? "active" : ""}`}
               onClick={() => setMode("pos")}
+							disabled={mining}
             >Proof of Stake</button>
           </div>
         </div>
@@ -68,9 +80,9 @@ export default function Mine({ onNavigate }) {
         {mode === "pow" ? (
           <div className="field">
             <label className="lbl">Miner (gets reward)</label>
-            <select className="input" value={miner} onChange={(e)=>setMiner(e.target.value)}>
+            <select className="input" value={miner} onChange={(e)=>setMiner(e.target.value)} disabled={mining}>
               {wallets.map(w => (
-                <option key={w.address} value={w.address}>{short(w.address)} • {w.path}</option>
+                <option key={w.address} value={w.address}>{short(w.address)}</option>
               ))}
             </select>
             <p className="hint">Current difficulty is low in this demo, so PoW will be very fast.</p>
@@ -78,16 +90,25 @@ export default function Mine({ onNavigate }) {
         ) : (
           <div className="field">
             <label className="lbl">Validator (gets reward)</label>
-            <select className="input" value={validator} onChange={(e)=>setValidator(e.target.value)}>
+            <select className="input" value={validator} onChange={(e)=>setValidator(e.target.value)} disabled={mining}>
               {accounts.map(a => (
                 <option key={a.address} value={a.address}>
-                  {short(a.address)} • stake {fmt(a.balance)} COIN
+                  {short(a.address)} ({fmt(a.balance)} COIN)
                 </option>
               ))}
             </select>
             <p className="hint">Validator selection is stake-weighted in this demo.</p>
           </div>
         )}
+
+				{mining && (
+					<div className="banner info">
+						Mining... tried <b>{(prog?.nonceTried ?? 0).toLocaleString()}</b> nonces,
+						elapsed <b>{Math.round((prog?.elapsedMs ?? 0)/1000)}s</b><br/>
+						Target <code className="mono">{(prog?.targetHex ?? "").slice(0,10)}...</code>
+						<span className="spinner" aria-hidden="true" />
+					</div>
+				)}
 
         {status && (
           <div className={`banner ${status.ok ? "ok" : "err"}`}>
@@ -96,8 +117,8 @@ export default function Mine({ onNavigate }) {
         )}
 
         <div className="actions">
-          <button className="btn primary" onClick={doMine}>Mine block</button>
-          <button className="btn" onClick={() => onNavigate?.('explorer')}>View Explorer</button>
+          <button className="btn primary" onClick={doMine} disabled={mining}>Mine block</button>
+          <button className="btn" onClick={() => onNavigate?.('explorer')} disabled={mining}>View Explorer</button>
         </div>
       </section>
     </main>
@@ -105,7 +126,7 @@ export default function Mine({ onNavigate }) {
 }
 
 function short(a) {
-    return a.length>19 ? `${a.slice(0,10)}…${a.slice(-9)}` : a
+    return a.length>19 ? `${a.slice(0,10)}...${a.slice(-9)}` : a
 }
 function fmt(n) {
     return Number(n).toLocaleString(undefined,{ maximumFractionDigits: 8 });

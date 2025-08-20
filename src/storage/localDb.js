@@ -2,6 +2,26 @@ import { keccak_256 } from "js-sha3";
 import { verifySignedTx, computeTxHash } from '../crypto/wallet-lib';
 
 const DB_KEY = "mycoin_db_21127561";
+const POW_DEFAULTS = {
+  // ~16 leading zero bits; adjust at runtime via retargeting
+  targetHex: "0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  // Easiest allowed target (cap)
+  maxTargetHex: "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  // Demo-scale retargeting (Bitcoin uses 2016 blocks / 10 min)
+  retargetInterval: 20,
+  targetBlockTimeMs: 10_000,
+  maxAdjustUp: 4.0,
+  maxAdjustDown: 0.25,
+};
+
+function ensurePowConfig(db) {
+  let changed = false;
+  if (!db.chain) { db.chain = { height:0, blocks:[], mempool:[], reward:50 }; changed = true; }
+  if (!db.chain.pow) { db.chain.pow = { ...POW_DEFAULTS }; changed = true; }
+  // Keep old code working if anything still reads `chain.difficulty`
+  if (typeof db.chain.difficulty !== 'number') { db.chain.difficulty = 2; changed = true; }
+  return changed;
+}
 
 // ---------- Base schema ----------
 export function makeEmptyDb() {
@@ -15,8 +35,20 @@ export function makeEmptyDb() {
       height: 0,
       blocks: [],
       mempool: [],
-      reward: 50,
-      difficulty: 2,
+      reward: 5,
+			pow: {
+        // Start harder than before. ~16 leading zero bits target (adjusts over time).
+        targetHex: "0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        // Upper bound (easiest allowed)
+        maxTargetHex: "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        // Retarget every N blocks (use 20 here so you feel it quickly in a demo).
+        retargetInterval: 20,
+        // Aim for ~10s per block in this demo (Bitcoin: 10 min).
+        targetBlockTimeMs: 10_000,
+        // Clamp factor like Bitcoin (between 0.25x and 4x)
+        maxAdjustUp: 4.0,
+        maxAdjustDown: 0.25
+      }
     },
   };
 }
@@ -57,11 +89,27 @@ function migrateIfNeeded(db) {
     save(next);
     return next;
   }
+
+	let changed = false;
+	if (!db.chain?.pow) {
+		changed = true;
+		db.chain = db.chain || {};
+		db.chain.pow = { ...POW_DEFAULTS };
+	}
+	if (typeof db.chain?.difficulty !== 'number') {
+		changed = true; db.chain.difficulty = 2;
+	}
+	if (changed) {
+		db.version = 3; save(db);
+	}
+
   return db;
 }
 
 function load() {
-  return migrateIfNeeded(loadRaw());
+	const db = migrateIfNeeded(loadRaw());
+	if (ensurePowConfig(db)) save(db); // belt & suspenders
+	return db;
 }
 
 export function getDb() {
@@ -226,6 +274,99 @@ export function mineBlock(minerAddress) {
   db.chain.mempool = []; // consumed
   save(db);
   return block;
+}
+
+function hexToBigInt(hex) { return BigInt('0x' + hex.replace(/^0x/, '')); }
+function bigIntToHex64(n) { return n.toString(16).padStart(64, '0'); }
+
+function getTargetBI(db) {
+	ensurePowConfig(db);
+	return hexToBigInt(db.chain.pow.targetHex);
+}
+function getMaxTargetBI(db) {
+	ensurePowConfig(db);
+	return hexToBigInt(db.chain.pow.maxTargetHex);
+}
+
+function retargetIfNeeded(db) {
+	ensurePowConfig(db);
+
+  const { retargetInterval, targetBlockTimeMs, maxAdjustUp, maxAdjustDown } = db.chain.pow;
+  const h = db.chain.height;
+  if (h === 0 || h % retargetInterval !== 0) return;
+
+  const last = db.chain.blocks[h - 1];
+  const first = db.chain.blocks[h - retargetInterval];
+  if (!first || !last) return;
+
+  const actualSpan = Math.max(1, last.timestamp - first.timestamp);
+  const expectedSpan = retargetInterval * targetBlockTimeMs;
+
+  // Factor = actual / expected; clamp to [0.25, 4] like Bitcoin
+  let factor = actualSpan / expectedSpan;
+  if (factor < maxAdjustDown) factor = maxAdjustDown;
+  if (factor > maxAdjustUp)   factor = maxAdjustUp;
+
+  // New target = old target * factor (bounded by max target: easier cap)
+  let newTarget = (getTargetBI(db) * BigInt(Math.round(factor * 1e8))) / BigInt(1e8);
+  const maxTarget = getMaxTargetBI(db);
+  if (newTarget > maxTarget) newTarget = maxTarget;
+
+  db.chain.pow.targetHex = bigIntToHex64(newTarget);
+}
+
+// Async PoW miner with progress yielding (keeps UI responsive)
+export async function mineBlockPowAsync(minerAddress, { onProgress } = {}) {
+  const db = load();
+	ensurePowConfig(db);
+
+  const tip = db.chain.blocks.at(-1);
+  const prevHash = tip ? tip.hash : "0".repeat(64);
+
+  // snapshot mempool + validate on temp state (sig + balances)
+  const txs = db.chain.mempool.slice();
+  const balances = new Map(Object.entries(db.accounts).map(([a, v]) => [a, v.balance]));
+  const safeGet = (a) => balances.get(a) ?? 0;
+  for (const tx of txs) {
+    if (!verifySignedTx(tx)) throw new Error("Invalid tx signature");
+    if (safeGet(tx.from) < tx.amount) throw new Error(`Insufficient funds for ${tx.from}`);
+    balances.set(tx.from, safeGet(tx.from) - tx.amount);
+    balances.set(tx.to, safeGet(tx.to) + tx.amount);
+  }
+
+  const rewardTx = { type: "coinbase", to: minerAddress, amount: db.chain.reward, nonce: db.chain.height };
+  const base = { index: db.chain.height, prevHash, timestamp: Date.now(), txs: [rewardTx, ...txs], consensus: "pow" };
+
+  const target = getTargetBI(db);
+  const BATCH = 5_000;              // hashes between UI yields
+  const start = Date.now();
+  let nonce = 0;
+
+  // Try nonces in batches; yield to the browser between batches.
+  while (true) {
+    for (let i = 0; i < BATCH; i++) {
+      nonce++;
+      const hashHex = keccak_256(JSON.stringify({ ...base, nonce }));
+      if (hexToBigInt(hashHex) <= target) {
+        const block = { ...base, nonce, hash: hashHex };
+        // commit: balances
+        for (const [addr, bal] of balances) db.accounts[addr] = { balance: bal };
+        db.accounts[minerAddress] ??= { balance: 0 };
+        db.accounts[minerAddress].balance += db.chain.reward;
+
+        db.chain.blocks.push(block);
+        db.chain.height += 1;
+        db.chain.mempool = [];
+        // retarget if needed
+        retargetIfNeeded(db);
+        save(db);
+        return block;
+      }
+    }
+    onProgress?.({ nonceTried: nonce, elapsedMs: Date.now() - start, targetHex: db.chain.pow.targetHex });
+    // Yield to UI before next batch
+    await new Promise(requestAnimationFrame);
+  }
 }
 
 export function addGenesis(recipient, amount = 1_000_000) {

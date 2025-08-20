@@ -67,3 +67,53 @@
     border: 1px solid #fecaca;
     color: #991b1b
 }
+
+.banner {
+    padding: 10px;
+    border-radius: 10px;
+    font-weight: 600;
+    margin-top: 8px
+}
+
+.banner.ok {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46
+}
+
+.banner.err {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b
+}
+
+.banner.info {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e3a8a;
+    position: relative;
+    padding-right: 36px
+}
+
+.mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace
+}
+
+.spinner {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #93c5fd;
+    border-top-color: #1d4ed8;
+    animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: translateY(-50%) rotate(360deg)
+    }
+}
