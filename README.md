@@ -1,12 +1,22 @@
-# React + Vite
+# MyCoin561 — Local Blockchain + Wallet (React + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Note: This app is front-end–only, and all processings are run in the browser. All data is stored in localStorage.
 
-Currently, two official plugins are available:
+## Demo Video: https://youtu.be/Ym4_HTAw0JQ
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## References
 
-## Expanding the ESLint configuration
+### Blockchain
+- 3Blue1Brown — "But how does bitcoin actually work?": https://www.youtu.be/bBC-nXj3Ng4
+- Bitcoin whitepaper — "Bitcoin: A Peer-to-Peer Electronic Cash System": https://bitcoin.org/bitcoin.pdf
+- Ethereum Yellow Paper — "A Secure Decentralised Generalised Transaction Ledger": https://ethereum.github.io/yellowpaper/paper.pdf
+- BIP-39 Mnemonic Code: https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki
+- EIP-55 Checksummed Addresses: https://eips.ethereum.org/EIPS/eip-55
+- Keccak / SHA-3: https://keccak.team/keccak.html
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Libraries
+- elliptic (secp256k1 ECDSA): https://github.com/indutny/elliptic
+- bip39: https://github.com/bitcoinjs/bip39
+- js-sha3: https://github.com/emn178/js-sha3
+- React: https://react.dev/
+- Vite: https://vitejs.dev/
